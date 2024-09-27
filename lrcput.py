@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 
-
-
-
-#PER ESEGUIRE SCRIVERE NEL TERMINALE python lrcput.py -d /path/to/directory -r -R
-
-
-
-
+# TO EXECUTE, RUN IN TERMINAL: python lrcput.py -d /path/to/directory -r -R
 
 import os
 import shutil
@@ -19,7 +12,7 @@ from mutagen.easyid3 import EasyID3
 from tqdm import tqdm
 
 def has_embedded_lyrics(audio, file_extension):
-    """Controlla se il file audio ha già i testi incorporati."""
+    """Checks if the audio file already has embedded lyrics."""
     if file_extension == '.flac':
         return 'LYRICS' in audio
     elif file_extension == '.m4a':
@@ -29,10 +22,10 @@ def has_embedded_lyrics(audio, file_extension):
     return False
 
 def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
-    """Incorpora i file LRC nei file audio e opzionalmente elimina i file LRC."""
+    """Embeds LRC files into audio files and optionally deletes the LRC files."""
     audio_files = []
     
-    # Raccoglie tutti i file audio nella directory (ricorsivamente se necessario)
+    # Collect all audio files in the directory (recursively if necessary)
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(('.flac', '.mp3', '.m4a')):
@@ -41,7 +34,7 @@ def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
     embedded_lyrics_files = 0
     failed_files = []
     
-    # Barre di avanzamento per visualizzare lo stato
+    # Progress bar to show the status
     with tqdm(total=len(audio_files), desc='Embedding LRC files', unit='file') as pbar:
         for audio_path in audio_files:
             file = os.path.basename(audio_path)
@@ -54,7 +47,7 @@ def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
                     audio = None
                     lyrics = open(lrc_path, 'r', encoding='utf-8').read()
                     
-                    # Se si richiede di saltare i file con testi già incorporati
+                    # If requested, skip files that already have embedded lyrics
                     if skip_existing:
                         if file_extension == '.flac':
                             audio = FLAC(audio_path)
@@ -68,7 +61,7 @@ def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
                             pbar.update(1)
                             continue
                     
-                    # Incorpora i testi nei vari formati
+                    # Embed lyrics in the various formats
                     if file_extension == '.flac':
                         audio = FLAC(audio_path)
                         audio['LYRICS'] = lyrics
@@ -85,7 +78,7 @@ def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
                     embedded_lyrics_files += 1
                     pbar.set_postfix({"status": f"embedded: {file}"})
                     
-                    # Se richiesto, elimina il file LRC dopo l'incorporamento
+                    # If requested, delete the LRC file after embedding
                     if reduce_lrc:
                         os.remove(lrc_path)
                         pbar.set_postfix({"status": f"embedded, LRC reduced: {file}"})
@@ -102,22 +95,22 @@ def embed_lrc(directory, skip_existing, reduce_lrc, recursive):
     return len(audio_files), embedded_lyrics_files, failed_files
 
 if __name__ == "__main__":
-    # Parser degli argomenti da riga di comando
+    # Command-line argument parser
     parser = argparse.ArgumentParser(description='Embed LRC files into audio files (FLAC, MP3, and M4A) and optionally reduce LRC files.')
     parser.add_argument('-d', '--directory', required=True, help='Directory containing audio and LRC files')
-    parser.add_argument('-s', '--skip', action='store_true', help='Skip files that already have embedded lyrics') #need to control if tag exist
+    parser.add_argument('-s', '--skip', action='store_true', help='Skip files that already have embedded lyrics')  # Need to check if the tag exists
     parser.add_argument('-r', '--reduce', action='store_true', help='Reduce (delete) LRC files after embedding')
     parser.add_argument('-R', '--recursive', action='store_true', help='Recursively process subdirectories')
     args = parser.parse_args()
 
-    # Esecuzione dello script con gli argomenti specificati
+    # Run the script with the specified arguments
     directory_path = args.directory
     skip_existing = args.skip
     reduce_lrc = args.reduce
     recursive = args.recursive
     total, embedded, failed = embed_lrc(directory_path, skip_existing, reduce_lrc, recursive)
     
-    # Statistiche finali
+    # Final statistics
     percentage = (embedded / total) * 100 if total > 0 else 0
     print(f"Total audio files: {total}")
     print(f"Embedded lyrics in {embedded} audio files.")
